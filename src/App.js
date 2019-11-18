@@ -1,113 +1,191 @@
 import React, { Component } from 'react';
 import './App.css';
+import TaskForm from './components/TaskForm';
+import Control from './components/Control';
+import TaskList from './components/TaskList';
 
 class App extends Component {
+	constructor(props){
+		super(props);
+		this.state = {
+			tasks: [],
+			isDisplayFrom : false,
+			taskEditting: null,
+			filter: {
+				name: '',
+				status: -1
+			}
+		}
+	}
+
+	componentWillMount(){
+		if(localStorage && localStorage.getItem('tasks')){
+			var tasks = JSON.parse(localStorage.getItem('tasks'));
+
+			this.setState({
+				tasks : tasks
+			})
+		}
+	}
+
+	s4(){
+		return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+	}
+
+	generateID(){
+		return this.s4() + this.s4() + '-' + this.s4()  + '-' + this.s4()  + '-' + this.s4()  + '-' + this.s4()  
+		+ '-' + this.s4()  + '-' + this.s4();
+	}
+
+	onToogleForm = () => { // Thêm task
+		if(this.state.isDisplayFrom && this.state.taskEditting !== null){
+			this.setState({
+				isDisplayFrom : true,
+				taskEditting: null
+			})
+		}else{
+			this.setState({
+				isDisplayFrom : !this.state.isDisplayFrom,
+				taskEditting: null
+			})
+		}
+	}
+
+	onCloseForm = () =>{
+		this.setState({
+			isDisplayFrom : false
+		})
+	}
+
+	onShowForm = () => {
+		this.setState({
+			isDisplayFrom : true
+		})
+	}
+
+	onSubmit = (data)=>{
+		var { tasks } = this.state;
+		if(data.id === ''){
+			data.id = this.generateID();
+			tasks.push(data);
+		}else{
+			// Editting
+			var index = this.findIndex(data.id);
+			tasks[index] = data;
+		}
+		
+		this.setState({
+			tasks: tasks,
+			taskEditting: null
+		});
+
+		localStorage.setItem('tasks', JSON.stringify(tasks));
+	}
+
+	onUpdateStatus = (id)=>{
+		var index = this.findIndex(id);
+		var { tasks } = this.state;
+		if(index !== -1){
+			tasks[index].status = !tasks[index].status;
+			this.setState({
+				tasks: tasks
+			});
+
+			localStorage.setItem('tasks', JSON.stringify(tasks));
+		}
+	}
+
+	onDelete = (id) => {
+		var index = this.findIndex(id);
+		var { tasks } = this.state;
+		if(index !== -1){
+			tasks.splice(index, 1);
+			this.setState({
+				tasks: tasks
+			});
+
+			localStorage.setItem('tasks', JSON.stringify(tasks));
+		}
+
+		this.onCloseForm();
+	}
+
+	onUpdate = (id) => {
+		var { tasks } = this.state;
+		var index = this.findIndex(id);
+		var taskEditting = tasks[index];
+
+		this.setState({
+			taskEditting: taskEditting
+		});
+
+		this.onShowForm();
+	}
+
+	findIndex = (id) => {
+		var { tasks } = this.state;
+		var result = -1;
+		tasks.forEach((task, index) => {
+			if(task.id == id){
+				result = index;
+			}
+		});
+		return result;
+	}
+
+	onFilter = (filterName, filterStatus) => {
+		filterStatus = parseInt(filterStatus, 10);
+		this.setState({
+			filter: {
+				name: filterName,
+				status: filterStatus
+			}
+		})
+	}
+
 	render(){
+		var { tasks, isDisplayFrom, taskEditting, filter } = this.state; // var tasks = this.state.tasks
+		console.log(filter);
+		var elmTaskForm = isDisplayFrom ? 
+				<TaskForm 
+					onCloseForm={ this.onCloseForm } 
+					onSubmit={ this.onSubmit }
+					task={ taskEditting }
+				/> : '';
+
 		return (
 			<div className="wrapper">
 				<div className="container">
-					<h1 class="text-center">Quản lý công việc</h1>
-					<div class="row">
-						<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-							{/* Form */}
-							<div class="panel panel-primary">
-								<div class="panel-heading">
-									<h3 class="panel-title">Thêm công việc<span><i class="fa fa-times-circle text-right" aria-hidden="true"></i></span></h3>
-								</div>
-								<div class="panel-body">
-									<form>
-										<div class="form-group">
-											<label>Tên:</label>
-											<input 
-												type="text" 
-												class="form-control" 
-											/>
-										</div>
-										<div class="form-group">
-											<label>Trạng thái:</label>
-											<select 
-												name="" 
-												class="form-control" 
-											>
-												<option value="0">Ẩn</option>
-												<option value="1">Hiển thị</option>
-											</select>
-										</div>
-										
-										<div class="text-center">
-											<button type="submit" class="btn btn-primary">
-												<i className="fa fa-plus" aria-hidden="true"></i>Lưu lại
-											</button>
-											<button type="submit" class="btn btn-primary">
-												<i class="fa fa-times" aria-hidden="true"></i>Hủy bỏ
-											</button>
-										</div>
-									</form>
-								</div>
-							</div>
-						</div>
-						<div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
-							<button type="button" class="btn btn-primary">
-								<i class="fa fa-plus" aria-hidden="true"></i> Thêm công việc
-							</button>
-							{/*Search - sort*/}
-							<div class="row">
-								<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-									<div class="input-group">
-										<input 
-										type="text" 
-										name="keyword" 
-										class="form-control" 
-										placeholder="Nhập từ khóa ..." 
-										/>
-										<span class="input-group-btn">
-											<button type="button" class="btn btn-primary">
-												<span class="fa fa-search mr-5"></span>Tìm
-											</button>
-										</span>
-									</div>
-								</div>
-								<div class="col-xs-6 col-sm-6 col-md-6 col-lg-6">
-									<div class="dropdown">
-										<button 
-										type="button" 
-										id="dropdownMenu1"
-										class="btn btn-primary dropdown-toggle"
-										data-toggle="dropdown"
-										aria-haspopup="true"
-										>
-										Sắp xếp <i class="fa fa-caret-square-o-down mr-5" aria-hidden="true"></i>
-										</button>
-										<ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
-											<li>
-												<a role="button" class="sort_selected">
-													<i class="fa fa-sort-alpha-asc pr-5" aria-hidden="true">Tên A - Z</i>
-												</a>
-											</li>
-											<li>
-												<a role="button">
-													<i class="fa fa-sort-alpha-desc pr-5" aria-hidden="true">Tên Z - A</i>
-												</a>
-											</li>
-											<li role="separator" class="divider"></li>
-											<li>
-												<a role="button">
-													Trạng thái ẩn
-												</a>
-											</li>
-											<li>
-												<a role="button">
-													Trạng thái kích hoạt
-												</a>
-											</li>
-										</ul>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-					
-				</div>
+			        <div className="text-center">
+			            <h1>Quản Lý Công Việc</h1>
+			            <hr/>
+			        </div>
+			        <div className="row">
+			            <div className={ isDisplayFrom ? 'col-xs-4 col-sm-4' : '' }>
+			            	{/* Form */}
+			                { elmTaskForm }
+			            </div>
+			            <div className={isDisplayFrom ? 'col-xs-8 col-sm-8 col-md-8 col-lg-8' : 'col-xs-12 col-sm-12 col-md-12 col-lg-12' }>
+			                <button 
+				                type="button" 
+				                className="btn btn-primary"
+				                onClick={ this.onToogleForm }
+			                >
+			                    <span className="fa fa-plus mr-5"></span>Thêm Công Việc
+			                </button>
+			                {/* Search - Sort */}
+			                <Control />
+			            	{/* List */}
+			                <TaskList 
+			                	tasks={ this.state.tasks } 
+			                	onUpdateStatus={ this.onUpdateStatus }
+			                	onDelete={ this.onDelete }
+			                	onUpdate={ this.onUpdate }
+			                	onFilter={ this.onFilter }
+			                />
+			            </div>
+			        </div>
+			    </div>
 			</div>
 		);
 	}
