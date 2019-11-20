@@ -11,10 +11,9 @@ class App extends Component {
 			tasks: [],
 			isDisplayFrom : false,
 			taskEditting: null,
-			filter: {
-				name: '',
-				status: -1
-			}
+			keyword: '',
+			sortBy: 'name',
+			sortValue: 1
 		}
 	}
 
@@ -133,19 +132,43 @@ class App extends Component {
 		return result;
 	}
 
-	onFilter = (filterName, filterStatus) => {
-		filterStatus = parseInt(filterStatus, 10);
+	onSearch = (keyword) => {
 		this.setState({
-			filter: {
-				name: filterName,
-				status: filterStatus
-			}
+			keyword: keyword
+		})
+	}
+
+	onSort = async (sortBy, sortValue) => {
+		await this.setState({
+			sortBy: sortBy,
+			sortValue: sortValue
 		})
 	}
 
 	render(){
-		var { tasks, isDisplayFrom, taskEditting, filter } = this.state; // var tasks = this.state.tasks
-		console.log(filter);
+		var { tasks, isDisplayFrom, taskEditting, keyword, sortBy, sortValue } = this.state; // var tasks = this.state.tasks
+
+		if(keyword){
+			tasks = tasks.filter((task) => {
+				return task.name.toLowerCase().indexOf(keyword) !== -1;
+			})
+		}
+
+		if(sortBy === 'name'){
+			tasks.sort((a, b) => {
+				if(a.name > b.name) return sortValue;
+				else if(a.name < b.name) return -sortValue;
+				else return 0;
+			})
+		}else{
+			tasks.sort((a, b) => {
+				if(a.status > b.status) return -sortValue;
+				else if(a.status < b.status) return +sortValue;
+				else return 0;
+			})
+		}
+		
+
 		var elmTaskForm = isDisplayFrom ? 
 				<TaskForm 
 					onCloseForm={ this.onCloseForm } 
@@ -174,7 +197,12 @@ class App extends Component {
 			                    <span className="fa fa-plus mr-5"></span>Thêm Công Việc
 			                </button>
 			                {/* Search - Sort */}
-			                <Control />
+			                <Control 
+			                	onSearch={ this.onSearch }
+			                	onSort={ this.onSort }
+			                	sortBy={ sortBy }
+			                	sortValue={ sortValue }
+			                />
 			            	{/* List */}
 			                <TaskList 
 			                	tasks={ this.state.tasks } 
@@ -182,6 +210,7 @@ class App extends Component {
 			                	onDelete={ this.onDelete }
 			                	onUpdate={ this.onUpdate }
 			                	onFilter={ this.onFilter }
+			                	onUpdateKeyword={ this.state.keyword }
 			                />
 			            </div>
 			        </div>

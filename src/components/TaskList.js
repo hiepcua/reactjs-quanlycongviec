@@ -6,7 +6,8 @@ class TaskList extends Component {
         super(props);
         this.state = {
             filterName: '',
-            filterStatus: -1 // all : -1, active : 1, deactive : 0  
+            filterStatus: -1, // all : -1, active : 1, deactive : 0  
+            keyword: ''
         }
     }
 
@@ -15,19 +16,38 @@ class TaskList extends Component {
         var name = target.name;
         var value = target.value;
 
-        this.props.onFilter(
-            name === 'filterName' ? value : this.state.filterName,
-            name === 'filterStatus' ? value : this.state.filterStatus
-        );
-
         this.setState({
             [name]: value
         });
     }
 
 	render(){
-        var { tasks } = this.props; // var tasks = this.props.tasks;
-        var { filterName, filterStatus } = this.state;
+        var { tasks, onUpdateKeyword } = this.props;
+        var { filterName, filterStatus, keyword } = this.state;
+
+        if(filterName){
+            if(filterName !== ''){
+                tasks = tasks.filter((task) => {
+                    return task.name.toLowerCase().indexOf(filterName) !== -1;
+                });
+            }
+        }
+
+        filterStatus = +filterStatus;
+        tasks = tasks.filter((task) => { 
+            if(filterStatus === -1){
+                return task;
+            }else{
+                return task.status === (filterStatus === 1) ? true : false;
+            }
+        })
+
+        if(onUpdateKeyword){
+            tasks = tasks.filter((task) => {
+                return task.name.toLowerCase().indexOf(onUpdateKeyword) !== -1;
+            });
+        }
+
         var elmTasks = tasks.map((task, index) => {
             return <TaskItem 
                     key={ task.id } 
